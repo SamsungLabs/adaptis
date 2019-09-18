@@ -1,0 +1,16 @@
+matplotlib
+numpy
+scipy
+Cython
+tqdm
+pyyaml
+easydict
+scikit-image
+Pillow
+imgaug
+mxboard
+graphviz
+opencv-python-headless
+gluoncv==0.4.0b20190301
+mxnet-cu100
+albumentations
