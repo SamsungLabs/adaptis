@@ -71,6 +71,8 @@ The repository provides an example of testing and metric evalutation for the toy
 
 ![alt text](./images/toy_results3.png)
 
+![alt_text](./images/adaptis_toy_vis.jpg)
+
 ### License
 The code of AdaptIS is released under the MPL 2.0 License. MPL is a copyleft license that is easy to comply with. You must make the source code for any of your changes available under MPL, but you can combine the MPL software with proprietary code, as long as you keep the MPL code in separate files.
 
