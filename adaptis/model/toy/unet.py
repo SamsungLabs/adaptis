@@ -79,7 +79,7 @@ class up_block(gluon.nn.HybridBlock):
                                                   in_channels=in_channels,
                                                   padding=1, use_bias=False, groups=channels,
                                                   weight_initializer=mx.init.Bilinear())
-        self.upsampler.collect_params().setattr('gred_req', 'null')
+        self.upsampler.collect_params().setattr('grad_req', 'null')
 
         self.conv1 = ConvBlock(channels, 1, norm_layer=norm_layer)
         self.conv3_0 = ConvBlock(channels, 3, norm_layer=norm_layer)
