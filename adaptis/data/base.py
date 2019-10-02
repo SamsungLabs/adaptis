@@ -148,11 +148,7 @@ class AdaptISDataset(gluon.data.dataset.Dataset):
         return sample
 
     def check_augmented_sample(self, sample, aug_output, masks_to_augment):
-        if self.keep_background_prob <= 0.0 or self.keep_background_prob >= 1.0:
-            return True
-
-        num_objects = len([x for x in sample['instances_info'].values() if not x['ignore']])
-        if num_objects == 0:
+        if self.keep_background_prob < 0.0 or random.random() < self.keep_background_prob:
             return True
 
         aug_instances_mask = aug_output['masks'][masks_to_augment.index('instances_mask')]
@@ -160,10 +156,7 @@ class AdaptISDataset(gluon.data.dataset.Dataset):
         num_objects_after_aug = len([obj_id for obj_id in aug_sample_ids
                                      if not sample['instances_info'][obj_id]['ignore']])
 
-        if num_objects_after_aug > 0 or random.random() < self.keep_background_prob:
-            return True
-
-        return False
+        return num_objects_after_aug > 0
 
     def exclude_small_objects(self, sample):
         if self.min_object_area <= 0:
@@ -191,14 +184,11 @@ class AdaptISDataset(gluon.data.dataset.Dataset):
         if 'semantic_segmentation' in sample:
             current_id = max(ignore_ids, default=0) + 1
             ss_ignore = sample['semantic_segmentation'] == -1
-            ss_ignore_not = np.logical_not(ss_ignore)
             ss_ignore_labeled, _ = measurements.label(ss_ignore, np.ones((3, 3)))
-            ss_ignore_ids = get_unique_labels(ss_ignore_labeled, exclude_zero=False)
+            ss_ignore_ids = get_unique_labels(ss_ignore_labeled, exclude_zero=True)
 
             for region_id in ss_ignore_ids:
                 region_mask = ss_ignore_labeled == region_id
-                if np.all(region_mask == ss_ignore_not):
-                    continue
 
                 region_mask_area = region_mask.sum()
                 if region_mask_area < self.min_ignore_object_area:
