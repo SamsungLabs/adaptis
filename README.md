@@ -60,6 +60,10 @@ python3 train_cityscapes.py --batch-size=8 --workers=2 --gpus=0,1 --dataset-path
 
 ### Main results
 
+<img src="./images/cityscapes_sample.jpg" alt="drawing" width="600"/>
+
+
+
 COCO:
 
 | Backbone         |  Split       |PQ     | PQ<sup>st</sup> | PQ<sup>th</sup> |
