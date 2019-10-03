@@ -8,6 +8,7 @@ The code performs **panoptic segmentation** and can be also used for **instance 
 
 
 ### ToyV2 dataset
+![alt text](./images/toy2_wide.jpg)
 
 We generated an even more complex synthetic dataset to show the main advantage of our algorithm over other detection-based instance segmentation algorithms. The new dataset contains 25000 images for training and 1000 images each for validation and testing. Each image has resolution of 128x128 and can contain from 12 to 52 highly overlapping objects.
 
