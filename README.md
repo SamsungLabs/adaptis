@@ -7,6 +7,24 @@ The code performs **panoptic segmentation** and can be also used for **instance 
 </p>
 
 
+### ToyV2 dataset
+
+We generated an even more complex synthetic dataset to show the main advantage of our algorithm over other detection-based instance segmentation algorithms. The new dataset contains 25000 images for training and 1000 images each for validation and testing. Each image has resolution of 128x128 and can contain from 12 to 52 highly overlapping objects.
+
+You can download the ToyV2 dataset from [here](https://drive.google.com/open?id=1iUMuWZUA4wzBC3ka01jkUM5hNqU3rV_U). You can test and visualize the model trained on this dataset using [this](notebooks/test_toy_v2_model.ipynb) notebook.
+
+![alt text](./images/toy_v2_comparison.jpg)
+
+
+### ToyV1 dataset
+
+We used the ToyV1 dataset for our experiments in the paper. We generated 12k samples for the toy dataset (10k for training and 2k for testing). The dataset has two versions:
+* **original** contains generated samples without augmentations;
+* **augmented** contains generated samples with fixed augmentations (random noise and blur).
+
+We trained our model on the original/train part and tested it on the augmented/test part. You can download the toy dataset from [here](https://drive.google.com/open?id=161UZrYSE_B3W3hIvs1FaXFvoFaZae4FT). The repository provides an example of testing and metric evalutation for the toy dataset. You can test and visualize trained model on the toy dataset using [provided](notebooks/test_toy_model.ipynb) Jupyter Notebook.
+
+
 ### Setting up a development environment
 
 AdaptIS is built using Python 3.6 and relies on the recent version of MXNet. The easiest way to install MXNet
@@ -21,9 +39,15 @@ Some of the inference code is written using Cython, you must compile the code be
 make -C ./adaptis/inference/cython_utils
 ```
 
+
 ### Training
 
-You can train model for the toy dataset by the following command:
+You can train model for the ToyV2 dataset by the following command:
+```
+python3 train_toy_v2.py --batch-size=14 --workers=2 --gpus=0 --dataset-path=<toy-dataset-path>
+```
+
+You can train model for the toy dataset (original from the paper) by the following command:
 ```
 python3 train_toy.py --batch-size=14 --workers=2 --gpus=0 --dataset-path=<toy-dataset-path>
 ```
@@ -58,20 +82,6 @@ Cityscapes:
 | ResNet-101       | 60.6 | 62.9  | 57.5  | 77.2 | 33.9 |
 | ResNeXt-101      | 62.0 | 64.4  | 58.7  | 79.2 | 36.3 |
 
-
-### Toy dataset
-For our experiments we generated 12k samples for the toy dataset (10k for training and 2k for testing). The dataset has two versions:
-* **original** contains generated samples without augmentations;
-* **augmented** contains generated samples with fixed augmentations (random noise and blur).
-
-We trained our model on the original/train part and tested it on the augmented/test part. You can download the toy dataset from [here](https://drive.google.com/open?id=161UZrYSE_B3W3hIvs1FaXFvoFaZae4FT).
-
-### Toy results
-The repository provides an example of testing and metric evalutation for the toy dataset. You can test and visualize trained model on the toy dataset using [provided](notebooks/test_toy_model.ipynb) Jupyter Notebook.
-
-![alt text](./images/toy_results3.png)
-
-![alt_text](./images/adaptis_toy_vis.jpg)
 
 ### License
 The code of AdaptIS is released under the MPL 2.0 License. MPL is a copyleft license that is easy to comply with. You must make the source code for any of your changes available under MPL, but you can combine the MPL software with proprietary code, as long as you keep the MPL code in separate files.
