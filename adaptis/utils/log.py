@@ -1,7 +1,10 @@
 import io
 import time
 import logging
-from mxboard import SummaryWriter
+
+import numpy as np
+from torch.utils.tensorboard import SummaryWriter
+
 
 LOGGER_NAME = 'root'
 
@@ -26,7 +29,7 @@ class TqdmToLogger(io.StringIO):
 
     def write(self, buf):
         self.buf = buf.strip('\r\n\t ')
- 
+
     def flush(self):
         if len(self.buf) > 0 and time.time() - self.last_time > self.mininterval:
             self.logger.log(self.level, self.buf)
@@ -41,7 +44,7 @@ class SummaryWriterAvg(SummaryWriter):
 
     def add_scalar(self, tag, value, global_step=None, disable_avg=False):
         if disable_avg or isinstance(value, (tuple, list, dict)):
-            super().add_scalar(tag, value, global_step=global_step)
+            super().add_scalar(tag, np.array(value), global_step=global_step)
         else:
             if tag not in self._avg_scalars:
                 self._avg_scalars[tag] = ScalarAccumulator(self._dump_period)

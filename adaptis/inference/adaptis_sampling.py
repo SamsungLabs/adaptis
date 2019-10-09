@@ -1,8 +1,10 @@
-import cv2
 import math
 import random
+
+import cv2
 import numpy as np
 from bridson import poisson_disc_samples
+
 from adaptis.inference.cython_utils.utils import find_local_maxima
 
 
@@ -38,7 +40,8 @@ def get_panoptic_segmentation(pmodel, image, ignore_mask=None, use_flip=True,
             cfeatures = pmodel.get_features(crop_image, use_flip)
 
             cthings_prob, cstuff_prob = pmodel.get_semantic_segmentation(cfeatures, use_flip=use_flip,
-                                                                         output_height=crop_size_h, output_width=crop_size_w)
+                                                                         output_height=crop_size_h,
+                                                                         output_width=crop_size_w)
 
             if crop_size is not None:
                 things_prob[:, dy:dy + crop_size_h, dx:dx + crop_size_w] += cthings_prob
@@ -205,11 +208,11 @@ def predict_instances_with_proposals(pmodel, features,
             continue
 
         p = pmodel.get_instance_masks(features[0], [best_point], states=point_invariant_states[0],
-                            width=image_shape[1], height=image_shape[0])[0]
+                                      width=image_shape[1], height=image_shape[0])[0]
         if use_flip:
             flipped_point = (best_point[0], output_width - best_point[1])
             p_flipped = pmodel.get_instance_masks(features[1], [flipped_point], states=point_invariant_states[1],
-                                        width=image_shape[1], height=image_shape[0])[0]
+                                                  width=image_shape[1], height=image_shape[0])[0]
             p = 0.5 * (p + p_flipped[:, ::-1])
 
         if cut_radius > 0:
@@ -234,10 +237,10 @@ def predict_instances_with_proposals(pmodel, features,
 
 
 def predict_instances_random(pmodel, features, instances_prob, ignore_mask, image_shape,
-                         thresh1=0.5, thresh2=0.6,
-                         num_candidates=5, num_iters=40,
-                         cut_radius=-1, use_flip=False,
-                         ithresh=0.5):
+                             thresh1=0.5, thresh2=0.6,
+                             num_candidates=5, num_iters=40,
+                             cut_radius=-1, use_flip=False,
+                             ithresh=0.5):
     point_invariant_states = pmodel.get_point_invariant_states(features)
     output_height, output_width = image_shape[:2]
 
@@ -258,12 +261,12 @@ def predict_instances_random(pmodel, features, instances_prob, ignore_mask, imag
                 break
 
         pmaps = pmodel.get_instance_masks(features[0], points, states=point_invariant_states[0],
-                                width=output_width, height=output_height)
+                                          width=output_width, height=output_height)
         if use_flip:
             flipped_points = points.copy()
             flipped_points[:, 1] = output_width - flipped_points[:, 1]
             pmaps_flipped = pmodel.get_instance_masks(features[1], flipped_points, states=point_invariant_states[1],
-                                            width=output_width, height=output_height)
+                                                      width=output_width, height=output_height)
 
             pmaps = 0.5 * (pmaps + pmaps_flipped[:, :, ::-1])
 

@@ -1,100 +1,92 @@
-import mxnet as mx
-from mxnet import gluon
+import torch
+import torch.nn as nn
+
+import adaptis.model.ops as ops
 
 
-class UNet(gluon.nn.HybridBlock):
-    def __init__(self, num_blocks=4, first_channels=64, max_width=512,
-                 norm_layer=gluon.nn.BatchNorm, **kwargs):
-        super(UNet, self).__init__(**kwargs)
+class UNet(nn.Module):
+    def __init__(self, num_blocks, first_channels=64, max_width=512, norm_layer=nn.BatchNorm2d, train_upsampling=True):
+        super(UNet, self).__init__()
 
         self.num_blocks = num_blocks
-        with self.name_scope():
-            self.image_bn = norm_layer(in_channels=3)
+        self.image_bn = norm_layer(3)
+        prev_ch = 3
 
-            prev_ch = 0
-            for i in range(num_blocks + 1):
-                if i == 0:
-                    dblock = down_block(first_channels, norm_layer=norm_layer)
-                else:
-                    dblock = gluon.nn.HybridSequential()
-                    dblock_ch = min(first_channels * (2 ** i), max_width)
-                    dblock.add(
-                        gluon.nn.MaxPool2D(2, 2, ceil_mode=True),
-                        down_block(dblock_ch, norm_layer=norm_layer)
-                    )
-                    prev_ch = dblock_ch
-                setattr(self, f'd{i}', dblock)
+        # encoder
+        self.encoder = nn.ModuleList()
+        for idx in range(num_blocks + 1):
+            out_ch = min(first_channels * (2 ** idx), max_width)
+            self.encoder.append(nn.Sequential(
+                nn.MaxPool2d(2, 2, ceil_mode=True) if idx > 0 else nn.Identity(),
+                DownBlock(prev_ch, out_ch, norm_layer=norm_layer)
+            ))
+            prev_ch = out_ch
 
-            for i in range(num_blocks):
-                uindx = self.num_blocks - i - 1
-                block_width = first_channels * (2 ** uindx)
-                block_ch = min(block_width, max_width)
-                block_shrink = uindx != 0 and block_width <= max_width
-                ublock = up_block(block_ch, shrink=block_shrink,
-                                  in_channels=prev_ch,
-                                  norm_layer=norm_layer)
-                prev_ch = block_ch
-                if block_shrink:
-                    prev_ch //= 2
-                setattr(self, f'u{uindx}', ublock)
+        # decoder
+        self.decoder = nn.ModuleList()
+        for idx in reversed(range(num_blocks)):
+            block_width = first_channels * (2 ** idx)
+            block_ch = min(block_width, max_width)
+            block_shrink = (idx > 0) and (block_width <= max_width)
 
-            self.fe = gluon.nn.HybridSequential()
-            self.fe.add(
-                gluon.nn.Conv2D(channels=first_channels, kernel_size=3, padding=1, activation='relu'),
-                norm_layer(in_channels=first_channels),
-                gluon.nn.Conv2D(channels=first_channels, kernel_size=3, padding=1, activation='relu'),
-                norm_layer(in_channels=first_channels)
+            self.decoder.append(
+                UpBlock(prev_ch, block_ch, shrink=block_shrink, norm_layer=norm_layer, train_upsampling=train_upsampling)
             )
 
-    def hybrid_forward(self, F, x):
+            prev_ch = block_ch // 2 if block_shrink else block_ch
+
+        self.final_block = DownBlock(prev_ch, first_channels, kernel_size=3, norm_layer=norm_layer)
+        self.feature_channels = first_channels
+
+    def get_feature_channels(self):
+        return self.feature_channels
+
+    def forward(self, x):
         x = self.image_bn(x)
 
-        d_outs = []
-        for i in range(self.num_blocks + 1):
-            x = getattr(self, f'd{i}')(x)
-            d_outs.append(x)
+        encoder_output = []
+        for encoder_block in self.encoder:
+            x = encoder_block(x)
+            encoder_output.append(x)
 
-        for i in range(self.num_blocks):
-            u_indx = self.num_blocks - i - 1
-            x = getattr(self, f'u{u_indx}')(x, d_outs[u_indx])
+        for idx, decoder_block in enumerate(self.decoder):
+            x = decoder_block(x, encoder_output[-idx - 2])
 
-        return self.fe(x),
+        x = self.final_block(x)
 
-
-def down_block(channels, norm_layer=gluon.nn.BatchNorm):
-    out = gluon.nn.HybridSequential()
-
-    out.add(
-        ConvBlock(channels, 3, norm_layer=norm_layer),
-        ConvBlock(channels, 3, norm_layer=norm_layer)
-    )
-    return out
+        return x
 
 
-class up_block(gluon.nn.HybridBlock):
-    def __init__(self, channels, shrink=True, norm_layer=gluon.nn.BatchNorm, in_channels=0, **kwargs):
-        super(up_block, self).__init__(**kwargs)
-
-        self.upsampler = gluon.nn.Conv2DTranspose(channels=channels, kernel_size=4, strides=2,
-                                                  in_channels=in_channels,
-                                                  padding=1, use_bias=False, groups=channels,
-                                                  weight_initializer=mx.init.Bilinear())
-        self.upsampler.collect_params().setattr('grad_req', 'null')
-
-        self.conv1 = ConvBlock(channels, 1, norm_layer=norm_layer)
-        self.conv3_0 = ConvBlock(channels, 3, norm_layer=norm_layer)
-        if shrink:
-            self.conv3_1 = ConvBlock(channels // 2, 3, norm_layer=norm_layer)
+class UpBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, shrink=True, norm_layer=nn.BatchNorm2d, train_upsampling=False):
+        super(UpBlock, self).__init__()
+        if train_upsampling:
+            self.upsampler = nn.Sequential(
+                ops.BilinearConvTranspose2d(in_channels, out_channels,  scale=2, groups=out_channels),
+                nn.ReLU()
+            )
         else:
-            self.conv3_1 = ConvBlock(channels, 3, norm_layer=norm_layer)
+            self.upsampler = nn.Sequential(
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                nn.ReLU()
+            )
 
-    def hybrid_forward(self, F, x, s):
+        self.conv3_0 = ConvBlock(2 * out_channels, out_channels, 3, norm_layer=norm_layer)
+        if shrink:
+            self.conv3_1 = ConvBlock(out_channels, out_channels // 2, 3, norm_layer=norm_layer)
+        else:
+            self.conv3_1 = ConvBlock(out_channels, out_channels, 3, norm_layer=norm_layer)
+
+    def forward(self, x, skip):
         x = self.upsampler(x)
-        x = self.conv1(x)
-        x = F.relu(x)
 
-        x = F.Crop(*[x, s], center_crop=True)
-        x = F.concat(s, x, dim=1)
+        if skip.size(2) > x.size(2):
+            skip = _center_crop(skip, x.size()[2:])
+        elif skip.size(2) < x.size(2):
+            x = _center_crop(x, skip.size()[2:])
+
+        x = torch.cat((x, skip), dim=1)
 
         x = self.conv3_0(x)
         x = self.conv3_1(x)
@@ -102,12 +94,37 @@ class up_block(gluon.nn.HybridBlock):
         return x
 
 
-def ConvBlock(channels, kernel_size, norm_layer=gluon.nn.BatchNorm):
-    out = gluon.nn.HybridSequential()
+class DownBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, norm_layer=nn.BatchNorm2d):
+        super(DownBlock, self).__init__()
+        self.down_block = nn.Sequential(
+            ConvBlock(in_channels, out_channels, kernel_size, norm_layer),
+            ConvBlock(out_channels, out_channels, kernel_size, norm_layer)
+        )
 
-    out.add(
-        gluon.nn.Conv2D(channels, kernel_size, padding=kernel_size // 2, use_bias=False),
-        gluon.nn.Activation('relu'),
-        norm_layer()
-    )
-    return out
+    def forward(self, x):
+        return self.down_block(x)
+
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, norm_layer=nn.BatchNorm2d):
+        super(ConvBlock, self).__init__()
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size, padding=kernel_size // 2, bias=False),
+            nn.ReLU(),
+            norm_layer(out_channels) if norm_layer is not None else nn.Identity()
+        )
+
+    def forward(self, x):
+        return self.conv_block(x)
+
+
+def _center_crop(tensor, target_size):
+    _, _, tensor_h, tensor_w = tensor.size()
+    diff_h = (tensor_h - target_size[0])
+    diff_w = (tensor_w - target_size[1])
+
+    from_h, from_w = diff_h // 2, diff_w // 2
+    to_h = target_size[0] + from_h
+    to_w = target_size[1] + from_w
+    return tensor[:, :, from_h: to_h, from_w: to_w]

@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import cv2
 import numpy as np
-from pathlib import Path
-from .base import AdaptISDataset, get_unique_labels
+
+from .base import BaseDataset
 
 
-class ToyDataset(AdaptISDataset):
+class ToyDataset(BaseDataset):
     def __init__(self, dataset_path, split='train', **kwargs):
         super(ToyDataset, self).__init__(**kwargs)
 
@@ -32,7 +34,7 @@ class ToyDataset(AdaptISDataset):
         else:
             instances_mask += 1
 
-        instances_ids = get_unique_labels(instances_mask, exclude_zero=True)
+        instances_ids = self.get_unique_labels(instances_mask, exclude_zero=True)
         instances_info = {
             x: {'class_id': 1, 'ignore': False}
             for x in instances_ids

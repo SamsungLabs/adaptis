@@ -1,11 +1,13 @@
+import os
+import shutil
 import logging
-import mxnet as mx
 from datetime import datetime
 from pathlib import Path
-import shutil
 
-from .log import logger
-from .args import get_train_arguments
+import torch
+
+from adaptis.utils.log import logger
+from adaptis.utils.args import get_train_arguments
 
 
 def init_experiment(experiment_name, add_exp_args, script_path=None):
@@ -48,14 +50,13 @@ def init_experiment(experiment_name, add_exp_args, script_path=None):
 
     if args.no_cuda:
         logger.info('Using CPU')
-        args.kvstore = 'local'
-        args.ctx = mx.cpu(0)
+        args.device = torch.device('cpu')
     else:
         if args.gpus:
-            args.ctx = [mx.gpu(int(i)) for i in args.gpus.split(',')]
-            args.ngpus = len(args.ctx)
-        else:
-            args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
+            os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+            os.environ["CUDA_VISIBLE_DEVICES"] = f"{args.gpus.split(',')[0]}"
+        args.device = torch.device(f'cuda:{0}')
+        args.ngpus = 1
         logger.info(f'Number of GPUs: {args.ngpus}')
 
         if args.ngpus < 2:

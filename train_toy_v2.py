@@ -1,17 +1,18 @@
-import mxnet as mx
-from mxnet.gluon.data.vision import transforms
 from functools import partial
-from gluoncv.utils import LRScheduler
+
+import torch
+from torchvision import transforms
 from easydict import EasyDict as edict
 from albumentations import Compose, Flip
 
-from adaptis.engine.trainer import AdaptISTrainer, init_proposals_head
+from adaptis.engine.trainer import AdaptISTrainer
 from adaptis.model.toy.models import get_unet_model
 from adaptis.model.losses import NormalizedFocalLossSigmoid, NormalizedFocalLossSoftmax, AdaptISProposalsLossIoU
 from adaptis.model.metrics import AdaptiveIoU
 from adaptis.data.toy import ToyDataset
+from adaptis.utils import log
+from adaptis.model import initializer
 from adaptis.utils.exp import init_experiment
-from adaptis.utils.log import logger
 
 
 def add_exp_args(parser):
@@ -34,13 +35,11 @@ def init_model():
                              model_cfg.input_normalization['std']),
     ])
 
-    if args.ngpus > 1 and model_cfg.syncbn:
-        norm_layer = partial(mx.gluon.contrib.nn.SyncBatchNorm, num_devices=args.ngpus)
-    else:
-        norm_layer = mx.gluon.nn.BatchNorm
+    # training using DataParallel is not implemented
+    norm_layer = torch.nn.BatchNorm2d
 
-    model = get_unet_model(norm_layer)
-    model.initialize(mx.init.Xavier(rnd_type='gaussian', magnitude=1), ctx=mx.cpu(0))
+    model = get_unet_model(norm_layer=norm_layer)
+    model.apply(initializer.XavierGluon(rnd_type='gaussian', magnitude=1.0))
 
     return model, model_cfg
 
@@ -92,42 +91,41 @@ def train(model, model_cfg, args, train_proposals, start_epoch=0):
     )
 
     optimizer_params = {
-        'learning_rate': 5e-4,
-        'beta1': 0.9, 'beta2': 0.999, 'epsilon': 1e-8
+        'lr': 5e-4, 'betas': (0.9, 0.999), 'eps': 1e-8
     }
 
     if not train_proposals:
-        lr_scheduler = partial(LRScheduler, mode='cosine',
-                               baselr=optimizer_params['learning_rate'],
-                               nepochs=num_epochs)
+        lr_scheduler = partial(torch.optim.lr_scheduler.CosineAnnealingLR,
+                               last_epoch=-1)
     else:
-        lr_scheduler = partial(LRScheduler, mode='cosine',
-                               baselr=optimizer_params['learning_rate'],
-                               nepochs=num_epochs)
+        lr_scheduler = partial(torch.optim.lr_scheduler.CosineAnnealingLR,
+                               last_epoch=-1)
 
     trainer = AdaptISTrainer(args, model, model_cfg, loss_cfg,
                              trainset, valset,
-                             optimizer='adam',
+                             num_epochs=num_epochs,
                              optimizer_params=optimizer_params,
                              lr_scheduler=lr_scheduler,
                              checkpoint_interval=40 if not train_proposals else 5,
                              image_dump_interval=200 if not train_proposals else -1,
                              train_proposals=train_proposals,
-                             hybridize_model=not train_proposals,
                              metrics=[AdaptiveIoU()])
 
-    logger.info(f'Starting Epoch: {start_epoch}')
-    logger.info(f'Total Epochs: {num_epochs}')
+    log.logger.info(f'Starting Epoch: {start_epoch}')
+    log.logger.info(f'Total Epochs: {num_epochs}')
     for epoch in range(start_epoch, num_epochs):
         trainer.training(epoch)
         trainer.validation(epoch)
 
 
 if __name__ == '__main__':
+    torch.multiprocessing.set_sharing_strategy('file_system')
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
     args = init_experiment('toy_v2', add_exp_args, script_path=__file__)
 
     model, model_cfg = init_model()
     train(model, model_cfg, args, train_proposals=False,
           start_epoch=args.start_epoch)
-    init_proposals_head(model, args.ctx)
+    model.add_proposals_head()
     train(model, model_cfg, args, train_proposals=True)

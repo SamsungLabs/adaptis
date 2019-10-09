@@ -1,24 +1,7 @@
 from functools import lru_cache
-import numpy as np
+
 import cv2
-
-
-def visualize_instances(imask, bg_color=255,
-                        boundaries_color=None, boundaries_width=1, boundaries_alpha=0.8):
-    num_objects = imask.max() + 1
-    palette = get_palette(num_objects)
-    if bg_color is not None:
-        palette[0] = bg_color
-
-    result = palette[imask].astype(np.uint8)
-    if boundaries_color is not None:
-        boundaries_mask = get_boundaries(imask, boundaries_width=boundaries_width)
-        tresult = result.astype(np.float32)
-        tresult[boundaries_mask] = boundaries_color
-        tresult = tresult * boundaries_alpha + (1 - boundaries_alpha) * result
-        result = tresult.astype(np.uint8)
-
-    return result
+import numpy as np
 
 
 @lru_cache(maxsize=16)
@@ -37,6 +20,23 @@ def get_palette(num_cls):
             lab >>= 3
 
     return palette.reshape((-1, 3))
+
+
+def visualize_instances(imask, bg_color=255, boundaries_color=None, boundaries_width=1, boundaries_alpha=0.8):
+    num_objects = imask.max() + 1
+    palette = get_palette(num_objects)
+    if bg_color is not None:
+        palette[0] = bg_color
+
+    result = palette[imask].astype(np.uint8)
+    if boundaries_color is not None:
+        boundaries_mask = get_boundaries(imask, boundaries_width=boundaries_width)
+        tresult = result.astype(np.float32)
+        tresult[boundaries_mask] = boundaries_color
+        tresult = tresult * boundaries_alpha + (1 - boundaries_alpha) * result
+        result = tresult.astype(np.uint8)
+
+    return result
 
 
 def visualize_mask(mask, num_cls):

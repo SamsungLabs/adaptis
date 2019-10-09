@@ -1,5 +1,7 @@
-import mxnet as mx
+import torch
 import numpy as np
+
+from adaptis.utils import misc
 
 
 class TrainMetric(object):
@@ -42,9 +44,9 @@ class AdaptiveIoU(TrainMetric):
     def update(self, pred, gt):
         gt_mask = gt > 0
         if self._from_logits:
-            pred = mx.nd.sigmoid(pred)
+            pred = torch.sigmoid(pred)
 
-        gt_mask_area = mx.nd.sum(gt_mask, axis=0, exclude=True).asnumpy()
+        gt_mask_area = torch.sum(gt_mask, dim=(1, 2)).cpu().numpy()
         if np.all(gt_mask_area == 0):
             return
 
@@ -82,9 +84,11 @@ class AdaptiveIoU(TrainMetric):
 
 
 def _compute_iou(pred_mask, gt_mask, ignore_mask, keep_ignore=False):
-    pred_mask = mx.nd.where(ignore_mask, mx.nd.zeros_like(pred_mask), pred_mask)
-    union = mx.nd.mean(mx.nd.logical_or(pred_mask, gt_mask), axis=0, exclude=True).asnumpy()
-    intersection = mx.nd.mean(mx.nd.logical_and(pred_mask, gt_mask), axis=0, exclude=True).asnumpy()
+    pred_mask = torch.where(ignore_mask, torch.zeros_like(pred_mask), pred_mask)
+
+    reduction_dims = misc.get_dims_with_exclusion(gt_mask.dim(), 0)
+    union = torch.mean((pred_mask | gt_mask).float(), dim=reduction_dims).cpu().numpy()
+    intersection = torch.mean((pred_mask & gt_mask).float(), dim=reduction_dims).cpu().numpy()
     nonzero = union > 0
 
     iou = intersection[nonzero] / union[nonzero]
@@ -94,4 +98,3 @@ def _compute_iou(pred_mask, gt_mask, ignore_mask, keep_ignore=False):
         result = np.full_like(intersection, -1)
         result[nonzero] = iou
         return result
-

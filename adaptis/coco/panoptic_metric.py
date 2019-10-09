@@ -1,7 +1,9 @@
 # Based on "COCO 2018 Panoptic Segmentation Task API":
 # https://github.com/cocodataset/panopticapi/blob/master/evaluation.py
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
+
 from .utils import rgb2id
 
 VOID = 0
