@@ -42,6 +42,8 @@ make -C ./adaptis/inference/cython_utils
 
 ### Training
 
+Currently our implementation supports training only on single gpu, which can be selected through *gpus* flag.
+
 You can train model for the ToyV2 dataset by the following command:
 ```
 python3 train_toy_v2.py --batch-size=14 --workers=2 --gpus=0 --dataset-path=<toy-dataset-path>
