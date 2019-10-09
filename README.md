@@ -2,6 +2,8 @@
 This codebase implements the system described in the paper ["AdaptIS: Adaptive Instance Selection Network"](https://arxiv.org/abs/1909.07829), Konstantin Sofiiuk, Olga Barinova, Anton Konushin. Accepted at ICCV 2019.
 The code performs **instance segmentation** and can be also used for **panoptic segmentation**.
 
+**[UPDATE]** We have released PyTorch implementation of our algorithm (now it supports only ToyV1 and ToyV2 datasets on single gpu). See *pytorch* branch. 
+
 <p align="center">
   <img src="./images/adaptis_model_scheme.png" alt="drawing" width="600"/>
 </p>
