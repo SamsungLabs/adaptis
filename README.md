@@ -1,6 +1,6 @@
 ## AdaptIS: Adaptive Instance Selection Network
 This codebase implements the system described in the paper ["AdaptIS: Adaptive Instance Selection Network"](https://arxiv.org/abs/1909.07829), Konstantin Sofiiuk, Olga Barinova, Anton Konushin. Accepted at ICCV 2019.
-The code performs **panoptic segmentation** and can be also used for **instance segmentation**.
+The code performs **instance segmentation** and can be also used for **panoptic segmentation**.
 
 <p align="center">
   <img src="./images/adaptis_model_scheme.png" alt="drawing" width="600"/>
