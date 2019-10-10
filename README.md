@@ -14,7 +14,7 @@ The code performs **instance segmentation** and can be also used for **panoptic 
 
 We generated an even more complex synthetic dataset to show the main advantage of our algorithm over other detection-based instance segmentation algorithms. The new dataset contains 25000 images for training and 1000 images each for validation and testing. Each image has resolution of 128x128 and can contain from 12 to 52 highly overlapping objects.
 
-You can download the ToyV2 dataset from [here](https://drive.google.com/open?id=1iUMuWZUA4wzBC3ka01jkUM5hNqU3rV_U). You can test and visualize the model trained on this dataset using [this](notebooks/test_toy_v2_model.ipynb) notebook.
+You can download the ToyV2 dataset from [here](https://drive.google.com/open?id=1iUMuWZUA4wzBC3ka01jkUM5hNqU3rV_U). You can test and visualize the model trained on this dataset using [this](notebooks/test_toy_v2_model.ipynb) notebook. You can download pretrained model from [here](https://drive.google.com/open?id=1RxepfpJF5gRpRNYu1urdV748suF3TL5k).
 
 ![alt text](./images/toy_v2_comparison.jpg)
 
@@ -25,7 +25,7 @@ We used the ToyV1 dataset for our experiments in the paper. We generated 12k sam
 * **original** contains generated samples without augmentations;
 * **augmented** contains generated samples with fixed augmentations (random noise and blur).
 
-We trained our model on the original/train part and tested it on the augmented/test part. You can download the toy dataset from [here](https://drive.google.com/open?id=161UZrYSE_B3W3hIvs1FaXFvoFaZae4FT). The repository provides an example of testing and metric evalutation for the toy dataset. You can test and visualize trained model on the toy dataset using [provided](notebooks/test_toy_model.ipynb) Jupyter Notebook.
+We trained our model on the original/train part and tested it on the augmented/test part. You can download the toy dataset from [here](https://drive.google.com/open?id=161UZrYSE_B3W3hIvs1FaXFvoFaZae4FT). The repository provides an example of testing and metric evalutation for the toy dataset. You can test and visualize trained model on the toy dataset using [provided](notebooks/test_toy_model.ipynb) Jupyter Notebook. You can download pretrained model from [here](https://drive.google.com/open?id=1IuJUh0JvbKYILBxCeO2h6U4LG-9DoTHi).
 
 
 ### Setting up a development environment
