@@ -11,9 +11,6 @@ def get_common_arguments():
     parser.add_argument('--thread-pool', action='store_true', default=False,
                         help='use ThreadPool for dataloader workers')
 
-    parser.add_argument('--no-cuda', action='store_true', default=False,
-                        help='disables CUDA training')
-
     parser.add_argument('--ngpus', type=int,
                         default=len(mx.test_utils.list_gpus()),
                         help='number of GPUs')

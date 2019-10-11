@@ -46,20 +46,15 @@ def init_experiment(experiment_name, add_exp_args, script_path=None):
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
-    if args.no_cuda:
-        logger.info('Using CPU')
-        args.kvstore = 'local'
-        args.ctx = mx.cpu(0)
+    if args.gpus:
+        args.ctx = [mx.gpu(int(i)) for i in args.gpus.split(',')]
+        args.ngpus = len(args.ctx)
     else:
-        if args.gpus:
-            args.ctx = [mx.gpu(int(i)) for i in args.gpus.split(',')]
-            args.ngpus = len(args.ctx)
-        else:
-            args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
-        logger.info(f'Number of GPUs: {args.ngpus}')
+        args.ctx = [mx.gpu(i) for i in range(args.ngpus)]
+    logger.info(f'Number of GPUs: {args.ngpus}')
 
-        if args.ngpus < 2:
-            args.syncbn = False
+    if args.ngpus < 2:
+        args.syncbn = False
 
     logger.info(args)
 
