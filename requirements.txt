@@ -8,7 +8,9 @@ easydict
 scikit-image
 Pillow
 imgaug
-mxboard
+tensorboard
 graphviz
 opencv-python-headless
 albumentations
+pytorch
+torchvision

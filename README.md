@@ -12,7 +12,9 @@ The code performs **panoptic segmentation** and can be also used for **instance 
 
 We generated an even more complex synthetic dataset to show the main advantage of our algorithm over other detection-based instance segmentation algorithms. The new dataset contains 25000 images for training and 1000 images each for validation and testing. Each image has resolution of 128x128 and can contain from 12 to 52 highly overlapping objects.
 
-You can download the ToyV2 dataset from [here](https://drive.google.com/open?id=1iUMuWZUA4wzBC3ka01jkUM5hNqU3rV_U).
+* You can download the ToyV2 dataset from [here](https://drive.google.com/open?id=1iUMuWZUA4wzBC3ka01jkUM5hNqU3rV_U). 
+* You can test and visualize the model trained on this dataset using [this](notebooks/test_toy_v2_model.ipynb) notebook.
+* You can download pretrained model from [here](https://drive.google.com/open?id=1fq72ZeVdOHM37Qv648lRVVD0VWjcD_a2).
 
 ![alt text](./images/toy_v2_comparison.jpg)
 
@@ -23,12 +25,15 @@ We used the ToyV1 dataset for our experiments in the paper. We generated 12k sam
 * **original** contains generated samples without augmentations;
 * **augmented** contains generated samples with fixed augmentations (random noise and blur).
 
-We trained our model on the original/train part and tested it on the augmented/test part. You can download the toy dataset from [here](https://drive.google.com/open?id=161UZrYSE_B3W3hIvs1FaXFvoFaZae4FT). The repository provides an example of testing and metric evalutation for the toy dataset. You can test and visualize trained model on the toy dataset using [provided](notebooks/test_toy_model.ipynb) Jupyter Notebook.
+We trained our model on the original/train part with online augmentations and tested it on the augmented/test part. The repository provides an example of testing and metric evalutation for the toy dataset.
+* You can download the toy dataset from [here](https://drive.google.com/open?id=161UZrYSE_B3W3hIvs1FaXFvoFaZae4FT). 
+* You can test and visualize trained model on the toy dataset using [provided](notebooks/test_toy_model.ipynb) Jupyter Notebook.
+* You can download pretrained model from [here](https://drive.google.com/file/d/1n1UzzNN_9H2F71xyhKckJDr8XHDSJ-py).
 
 
 ### Setting up a development environment
 
-AdaptIS is built using Python 3.6 and relies on the most recent version of PyTorch. This code was tested with PyTorch 1.3.0a0+0222ece and TorchVision 0.5.0a0+a141363. The following command installs all necessary packages except PyTorch and TorchVision which are to be build from source:
+AdaptIS is built using Python 3.6 and relies on the most recent version of PyTorch. This code was tested with PyTorch 1.3.0 and TorchVision 0.4.1. The following command installs all necessary packages:
 
 ```
 pip3 install -r requirements.txt
